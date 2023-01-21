@@ -1,25 +1,48 @@
-import * as webpack from 'webpack';
+import {IgnorePlugin} from 'webpack';
+import type {Configuration} from 'webpack';
+
+const lazyImports = [
+  '@nestjs/microservices/microservices-module',
+  '@nestjs/websockets/socket-module',
+  'cache-manager',
+  'class-validator',
+  '@nestjs/microservices',
+];
 
 export default {
-    mode: 'production',
-    entry: './src/main.ts',
-    target: 'node',
-    module: {
-      rules: [
-        {
-          test: /\.ts$/,
-          exclude: /(node_modules)/,
-          use: "swc-loader"
-        }
-      ]
-    },
-    resolve: {
-      extensions: ['.ts'],
-    },
-    output: {
-      filename: 'bundle.js',
-      library: {
-        type: 'commonjs2'
+  mode: 'development',
+  entry: './src/main.ts',
+  target: 'node',
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        exclude: /(node_modules)/,
+        use: "swc-loader"
       }
-    },
-} as webpack.Configuration
+    ]
+  },
+  resolve: {
+    extensions: ['.ts', '.js'],
+  },
+  plugins: [
+    new IgnorePlugin({
+      checkResource(resource) {
+        if (lazyImports.includes(resource)) {
+          try {
+            require.resolve(resource);
+          } catch (err) {
+            return true;
+          }
+        }
+        return false;
+      },
+    }),
+  ],
+  output: {
+    filename: 'bundle.js',
+    library: {
+      type: 'commonjs2'
+    }
+  },
+} as Configuration
